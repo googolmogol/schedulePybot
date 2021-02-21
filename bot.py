@@ -1,4 +1,3 @@
-from datetime import datetime
 from threading import Thread
 from data_access import *
 
@@ -9,9 +8,18 @@ import time
 bot = telebot.TeleBot("801359509:AAHjuBl_1xRdDHHTTacpT3Q1TSiXl_qQiCw")
 
 chat_id = ''
-chat_id_list = []
+chat_id_list = get_users_id()
+print(chat_id_list)
 week = True
 lock_is = True
+
+keyboard = telebot.types.InlineKeyboardMarkup()
+show_schedule = telebot.types.InlineKeyboardButton(text="Показать расписание",
+                                                   callback_data="show_schedule")
+keyboard.add(show_schedule)
+change_schedule = telebot.types.InlineKeyboardButton(text="Изменить расписание",
+                                                     callback_data="change_schedule")
+keyboard.add(change_schedule)
 
 
 @bot.message_handler(commands=['start'])
@@ -19,8 +27,10 @@ def send_welcome(message):
     global chat_id
     chat_id = message.chat.id
     print(message.from_user.first_name, "joined")
-    if chat_id not in chat_id_list:
+    if str(chat_id) not in chat_id_list:
         chat_id_list.append(chat_id)
+        insert_data(chat_id_list)
+        print(chat_id_list)
 
     hub_btn = button_creating("Хаб с материалами",
                               "https://drive.google.com/drive/folders/16c2M4x1JY1PdvjVngOBrNG29B5Pn5p0o"
@@ -57,6 +67,7 @@ def send_messages_all(text, user_list, markup):
             bot.send_message(member, text, parse_mode="HTML", reply_markup=markup)
         except Exception:
             print("The user has stopped the bot")
+
             user_list.remove(member)
 
 
@@ -72,9 +83,9 @@ def checker_schedule():
             lock_is = False
 
     if not week:
-        get_data("непарний")
+        get_lessons("непарний")
     else:
-        get_data("парний")
+        get_lessons("парний")
 
     schedule.every().day.at("00:31").do(job)
 

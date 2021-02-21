@@ -4,46 +4,39 @@
 # https://www.techwithtim.net/tutorials/google-sheets-python-api-tutorial/
 
 from datetime import datetime
-
 import gspread
 
-gc = gspread.service_account(filename='credentials1.json')
-sh = gc.open_by_key("19dLgpGsLAW4K4yiSdbpsA-njCGiDwhiYXa3uaWFJbsY")  # or by sheet name: gc.open("TestList")
+gc = gspread.service_account(filename='credentials.json')
+sh = gc.open_by_key("19dLgpGsLAW4K4yiSdbpsA-njCGiDwhiYXa3uaWFJbsY")
 worksheet = sh.sheet1
 
-week_column = worksheet.col_values(5)
+week_column = worksheet.col_values(5)  # list of weeks column
+# dictionary to recognize which day is today
+days_dict = {1: "monday", 2: "tuesday", 3: "wednesday", 4: "thursday", 5: "friday", 6: "saturday", 7: "sunday"}
+lesson_today = []  # list which will save the row of data from google sheet
 
-lesson_today = []
 
-
-def get_data(week):
-    lesson_today.clear()
-    counter = 0
+def get_lessons(week):
+    lesson_today.clear()  # clear previous data
+    counter = 0  # counter for moving along rows
     for i in week_column:
         counter += 1
-
         if i == week:
-            if datetime.today().isoweekday() == 1:
-                if worksheet.cell(counter, 1).value == "monday":
-                    lesson_today.append(worksheet.row_values(counter))
-            elif datetime.today().isoweekday() == 2:
-                if worksheet.cell(counter, 1).value == "tuesday":
-                    lesson_today.append(worksheet.row_values(counter))
-            elif datetime.today().isoweekday() == 3:
-                if worksheet.cell(counter, 1).value == "wednesday":
-                    lesson_today.append(worksheet.row_values(counter))
-            elif datetime.today().isoweekday() == 4:
-                if worksheet.cell(counter, 1).value == "thursday":
-                    lesson_today.append(worksheet.row_values(counter))
-            elif datetime.today().isoweekday() == 5:
-                if worksheet.cell(counter, 1).value == "friday":
-                    lesson_today.append(worksheet.row_values(counter))
-            elif datetime.today().isoweekday() == 6:
-                if worksheet.cell(counter, 1).value == "saturday":
-                    lesson_today.append(worksheet.row_values(counter))
-            elif datetime.today().isoweekday() == 7:
-                if worksheet.cell(counter, 1).value == "sunday":
-                    lesson_today.append(worksheet.row_values(counter))
+            if worksheet.cell(counter, 1).value == days_dict[datetime.today().isoweekday()]:
+                lesson_today.append(worksheet.row_values(counter))
+
+
+get_lessons("парний")
+print(lesson_today)
+
+
+def insert_data(data_list):
+    for i in range(0, len(data_list)):
+        worksheet.update_cell(i + 2, 7, data_list[i])
+
+
+def get_users_id():
+    return worksheet.col_values(7)[1:]
 
 
 def time_before_lesson(lesson_time):
