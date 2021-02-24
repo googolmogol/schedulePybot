@@ -5,7 +5,7 @@ import telebot
 import schedule
 import time
 
-from keyboard import Keyboard, button_dict, reply_button, days_dict_ru, items_change_dict, change_values
+from reply_keyboard import Keyboard, button_dict, reply_button, days_dict_ru, items_change_dict, change_values
 
 bot = telebot.TeleBot("801359509:AAHjuBl_1xRdDHHTTacpT3Q1TSiXl_qQiCw")
 
@@ -41,7 +41,7 @@ def send_echo(message):
 
     if message.text in button_dict:
         keyboard.choose_action(message, message.text)
-    elif message.text == 'Показать расписание':
+    elif message.text == 'Показати розклад':
         keyboard.show_schedule(message)
     elif message.text in days_dict_ru:
         keyboard.day_btn(message, message.text)
@@ -49,7 +49,7 @@ def send_echo(message):
         keyboard.lesson_num(message, int(message.text))
     elif message.text in items_change_dict:
         keyboard.change_item(message, message.text)
-    elif message.text == 'Сохранить':
+    elif message.text == 'Зберегти':
         keyboard.update_entered_data(message)
     else:
         change_values.append(message.text)
@@ -137,12 +137,12 @@ def send_schedule():
         for i in lesson_today:
             schedule_var = schedule.every().day.at(i[1]).do(job, i)
             if i[2] != '-':
-                text = '<strong>Напоминание!</strong>\nПара "' + i[2] + '" начнётся через 10 минут.'
+                text = '<strong>Нагадування!</strong>\nПара "' + i[2] + '" розпочнеться за 10 хвилин.'
                 schedule_var2 = schedule.every().day.at(time_before_lesson(i[1])).do(send_messages_all, text,
                                                                                      chat_id_list,
                                                                                      reply_button(
-                                                                                         ['Показать расписание',
-                                                                                          'Изменить расписание']))
+                                                                                         ['Показати розклад',
+                                                                                          'Редагувати розклад']))
     except Exception as e:
         print(e, "Invalid time format")
 

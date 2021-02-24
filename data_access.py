@@ -7,7 +7,7 @@ from datetime import datetime
 import gspread
 
 gc = gspread.service_account(filename='restfiles/cred.json')
-sh = gc.open_by_key("19dLgpGsLAW4K4yiSdbpsA-njCGiDwhiYXa3uaWFJbsY")
+sh = gc.open_by_key("1R_MhFDYyz_uf2bF04qBwbbNfGvDex_q3fc-Egesihjs")
 worksheet = sh.sheet1
 
 week_column = worksheet.col_values(5)  # list of weeks column
@@ -29,6 +29,7 @@ def get_lessons(week, day):
                 row_index_to_change.append(counter)
     return lesson_to_change
 
+print(get_lessons("парний", 1))
 
 def insert_users(data_list):
     for i in range(0, len(data_list)):
