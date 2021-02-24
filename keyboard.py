@@ -12,6 +12,7 @@ button_dict = {
                                           'Выберите действие'],
     "Главное меню": ['Показать расписание', 'Редактировать расписание', 'Вот мы и вернулись'],
     "Изменить пару": ['Четная', 'Нечетная', 'Назад в редактирование расписания', 'Выберите неделю'],
+    "Удалить пару": ['Четная', 'Нечетная', 'Назад в редактирование расписания', 'Выберите неделю'],
     "Назад в выбор недели": ['Четная', 'Нечетная', 'Назад в редактирование расписания', 'Главное меню',
                              'Выберите неделю'],
     "Четная": ['Понедельник', 'Вторник', 'Среда', 'Четверг', 'Пятница', 'Суббота', 'Воскресенье',
@@ -20,7 +21,8 @@ button_dict = {
                  'Назад в выбор недели', 'Главное меню', 'Выберите день'],
     "Назад в выбор дня": ['Понедельник', 'Вторник', 'Среда', 'Четверг', 'Пятница', 'Суббота', 'Воскресенье',
                           'Назад в выбор недели', 'Главное меню', 'Выберите день'],
-    "Назад в выбор параметра для изменения": ['Название пары', 'Преподавателя', 'Время', 'Ссылку', 'Главное меню'],
+    "Назад в выбор параметра для изменения": ['Название пары', 'Преподавателя', 'Время', 'Ссылку',
+                                              'Выберите, что нужно изменить'],
 
 }
 
@@ -45,7 +47,9 @@ def reply_button(btn_list):
     return markup
 
 
+# noinspection PyGlobalUndefined
 class Keyboard:
+
     def __init__(self, bot):
         self.bot = bot
 
@@ -71,11 +75,14 @@ class Keyboard:
         day = days_dict_ru[day_txt]
         print("day in day_btn:", day)
         text = day_txt + ", пары," + changed_week + "неделя:\n\n"
+        global lesson_to_change
+        lesson_to_change.clear()
 
-        change_lessons = get_lessons(changed_week, day)
+        lesson_to_change = get_lessons(changed_week, day)
+        print(lesson_to_change)
         counter = 1
         button_list = []
-        for i in change_lessons:
+        for i in lesson_to_change:
             text += str(counter)
             counter += 1
             button_list.append(str(counter - 1))
@@ -89,7 +96,7 @@ class Keyboard:
         print("btn_list in day_btn: ", button_list)
         self.bot.send_message(message.chat.id, text, parse_mode="HTML", reply_markup=reply_button(button_list))
 
-    # return choosen lesson to change to user
+    # sending chosen lesson to change to user
     def lesson_num(self, message, index):
         change_values.clear()
         print("lesson_to_change in lesson_num", lesson_to_change)
@@ -98,11 +105,12 @@ class Keyboard:
             3] + "\nЧас: " + lesson_to_change[index - 1][1]
         text += '\n'
         text += "\nВыберите, что нужно изменить:"
-        button_list = ['Название пары', 'Преподавателя', 'Время', 'Ссылку', 'Главное меню']
+        button_list = ['Название пары', 'Преподавателя', 'Время', 'Ссылку', 'Выберите, что нужно изменить']
         change_values.append(row_index_to_change[index - 1])  # add row on google sheet of choosen lesson
+
         self.bot.send_message(message.chat.id, text, parse_mode="HTML", reply_markup=reply_button(button_list))
 
-    # user entering data to change
+    # user choosing data to change
     def change_item(self, message, text):
         change_values.append(items_change_dict[text] + 1)  # add col on google sheet of choosen lesson
         text = 'Введите ' + text.lower() + ' и нажмите конпку "Сохранить"'
@@ -111,8 +119,20 @@ class Keyboard:
 
     # save changes on google sheet
     def update_entered_data(self, message):
-        update_data(change_values[0], change_values[1], change_values[2])
-        print("changed_values in update_entered_data:", change_values)
-        change_values.clear()
-        self.bot.send_message(message.chat.id, "Сохранил", parse_mode="HTML", reply_markup=reply_button(
-            ['Выбор', 'Редактировать расписание']))
+        try:
+            update_data(change_values[0], change_values[1], change_values[2])
+            print("changed_values in update_entered_data:", change_values)
+            temp = change_values[0]
+            change_values.clear()
+            change_values.append(temp)
+            self.bot.send_message(message.chat.id, "Сохранил", parse_mode="HTML", reply_markup=reply_button(
+                ['Назад в выбор параметра для изменения', 'Назад в выбор дня', 'Назад в выбор недели', 'Главное меню']))
+        except Exception as e:
+            print(e)
+            temp = change_values[0]
+            temp2 = change_values[1]
+            change_values.clear()
+            change_values.append(temp)
+            change_values.append(temp2)
+            self.bot.send_message(message.chat.id, "Введите параметр, не стесняйтесь", parse_mode="HTML",
+                                  reply_markup=reply_button(['Сохранить', 'Главное меню']))

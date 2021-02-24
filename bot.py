@@ -56,36 +56,6 @@ def send_echo(message):
         print("changes_value in handler:", change_values)
 
 
-'''
-       if message.text == 'Понедельник':
-           text = "Сегодняшниее пары\n"
-           for i in lesson_today:
-               for k in i:
-                   text += str(k) + " "
-               text += '\n\n'
-           text += "Выберите какую нужно изменить:"
-           button_list = ['1', '2']
-           bot.send_message(message.chat.id, text, parse_mode="HTML", reply_markup=reply_button(button_list))
-       if message.text == '1':
-           text = "Что именно изменить?"
-           button_list = ['Препода', 'Пару']
-           bot.send_message(message.chat.id, text, parse_mode="HTML", reply_markup=reply_button(button_list))
-
-       if message.text == 'Пару':
-           text = "Введите название пары и нажмите кнопку сохранить"
-           button_list = ['Сохранить', 'Назад']
-           bot.send_message(message.chat.id, text, parse_mode="HTML", reply_markup=reply_button(button_list))
-
-       if message.text == 'Сохранить':
-           update_data(19, 3, text_entered[-1])
-           text = "Сохранил"
-           button_list = ['Сохранить', 'Назад']
-           bot.send_message(message.chat.id, text, parse_mode="HTML", reply_markup=reply_button(button_list))
-       else:
-           text_entered.append(message.text)
-       print(text_entered)'''
-
-
 def job(lesson):
     global lock_is
 

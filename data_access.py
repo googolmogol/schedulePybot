@@ -15,12 +15,6 @@ week_column = worksheet.col_values(5)  # list of weeks column
 days_dict = {1: "monday", 2: "tuesday", 3: "wednesday", 4: "thursday", 5: "friday", 6: "saturday", 7: "sunday"}
 lesson_to_change = []  # list which will save the row of data from google sheet
 row_index_to_change = []
-button_dict = {"Редактировать расписание": ['Добавить пару', 'Изменить пару', 'Удалить пару', 'Назад', 'Выберите '
-                                                                                                       'действие'],
-               "Назад": ['Показать расписание', 'Редактировать расписание', 'Вот мы и вернулись'],
-               "Изменить пару": ['Четная', 'Нечетная', 'Назад', 'Выберите неделю'],
-               "Четная": ['Понедельник', 'Вторник', 'Среда', 'Четверг', 'Пятница', 'Суббота', 'Воскресение',
-                          'Выберите день']}
 
 
 def get_lessons(week, day):
@@ -33,10 +27,7 @@ def get_lessons(week, day):
             if worksheet.cell(counter, 1).value == days_dict[day]:
                 lesson_to_change.append(worksheet.row_values(counter))
                 row_index_to_change.append(counter)
-    print('kek')
-    print(row_index_to_change)
     return lesson_to_change
-
 
 
 def insert_users(data_list):
