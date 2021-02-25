@@ -6,9 +6,10 @@ from parsing_sheet import get_lessons_row, time_before_lesson, get_users_id
 from reply_keyboard import inline_button, Keyboard
 
 # dict for user activity, to track his steps
-user_step = {"action": '-', "week": '-', "day": '-', "lesson_num": '-', "item_to_change": '-'}
+user_step = {"action": 'kek', "week": 'kek', "day": 'kek', "lesson_num": 'kek', "item_to_change": 'kek',
+             "changed_value": 'kek'}
 # dict with change items and their position on Google SH
-items_change_dict = {'Назву пари': 2, 'Викладача': 3, 'Час': 1, 'Посилання': 5, 'Тиждень': 4}
+items_change_dict = {'Назву пари': 3, 'Викладача': 4, 'Час': 2, 'Посилання': 6, 'Тиждень': 5}
 
 days_dict_ua = {'Понеділок': 1, 'Вівторок': 2, 'Середа': 3, 'Четвер': 4, "П'ятниця": 5, 'Субота': 6, 'Неділя': 7}
 
@@ -18,7 +19,6 @@ chat_id_list = get_users_id()  # list to determine user is new or no
 week = False  # current week
 lock_is = True  # var for week changing
 global schedule_var, schedule_var2  # vars for schedules
-killer_var = [False]
 lesson_today = []  # list for parsing today's lessons
 
 
@@ -39,7 +39,10 @@ def get_lesson_to_change(ch_week, day):
                 '">лінк</a>\nТиждень: ' + i[4]
 
         text += '\n'
-    text += "\nОберіть номер пари, яку необхідно редагувати: "
+    if len(lesson_to_change1) > 0:
+        text += "\nОберіть номер пари, яку необхідно редагувати: "
+    else:
+        text = "<strong>В цей день немає пар</strong>"
     button_list.append('Назад до вибору дня')
     button_list.append('Головне меню')
     return button_list, text
@@ -53,7 +56,8 @@ def get_text_choosing_lesson_num(message):
         3] + "\nЧас: " + lesson_to_change1[index - 1][1] + "\nПосилання: " + '<a href="' + \
         lesson_to_change1[index - 1][5] + '">лінк</a>\nТиждень: ' + lesson_to_change1[index - 1][4]
     text += '\n'
-    text += "\nОберіть, що саме необхідно редагувати:"
+    if user_step['action'] == 'Редагувати пару':
+        text += "\nОберіть, що саме необхідно редагувати:"
     return text
 
 
@@ -103,11 +107,11 @@ class DataProc:
         global lesson_today
         if not week:
             lesson_today = get_lessons_row("непарний", datetime.today().isoweekday(), False)
-       #     print("непарний")
-      #      print(lesson_today)
+            print("непарний")
+            print(lesson_today)
         else:
             lesson_today = get_lessons_row("парний", datetime.today().isoweekday(), False)
-     #       print("парний")
+            print("парний")
         self.send_schedule()
 
     # sending schedule
@@ -132,37 +136,23 @@ class DataProc:
             print(e, "Invalid time format")
 
 
+
 # verifies compliance with the sequence of user steps
 def status_user(value):
-    if value == "Вибрати дію":
-        if user_step["action"] != "-":
-            return True
-        else:
+    keys = list(user_step.keys())
+    first_elements = keys.index(value) + 1
+    print(first_elements)
+    keys = keys[:first_elements]
+    for i in keys:
+        if user_step[i] == 'kek':
             return False
-    if value == "Вибрати тиждень":
-        if user_step["action"] != "-" and user_step["week"] != "-":
-            return True
-        else:
-            return False
-    if value == "Вибрати день":
-        if user_step["action"] != "-" and user_step["week"] != "-" and user_step["day"] != "-":
-            return True
-        else:
-            return False
+    return True
 
 
 # clear user status
 def clear_user_step(current):
     keys = list(user_step.keys())[::-1]  # reverse list
     for i in keys:
-        user_step[i] = '-'
+        user_step[i] = 'kek'
         if i == current:
             break
-
-
-# https://clck.ru/TSmqM
-# break function
-def killer_fun(var):
-    if var:
-        killer_var[0] = False
-        raise Exception
