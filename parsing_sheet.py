@@ -17,7 +17,8 @@ lesson_to_change = []  # list which will save the row of data from google sheet
 row_index_to_change = []
 
 
-def get_lessons(week, day):
+# function parsing lesson row
+def get_lessons_row(week, day, row_index):
     row_index_to_change.clear()
     lesson_to_change.clear()  # clear previous data
     counter = 0  # counter for moving along rows
@@ -26,10 +27,10 @@ def get_lessons(week, day):
         if i == week:
             if worksheet.cell(counter, 1).value == days_dict[day]:
                 lesson_to_change.append(worksheet.row_values(counter))
-                row_index_to_change.append(counter)
+                if row_index:
+                    row_index_to_change.append(counter)
     return lesson_to_change
 
-print(get_lessons("парний", 1))
 
 def insert_users(data_list):
     for i in range(0, len(data_list)):
