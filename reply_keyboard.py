@@ -8,6 +8,7 @@ import telebot
 # [0] - row
 # [1] - col
 # [2] - value to change
+
 change_values = []
 
 changed_week = ''  # var to define which week choose user
@@ -15,6 +16,14 @@ changed_week = ''  # var to define which week choose user
 
 def get_mark(resize, onetime):
     return telebot.types.ReplyKeyboardMarkup(resize, onetime)
+
+
+# creating inline buttons
+def inline_button(text, url):
+    markup = telebot.types.InlineKeyboardMarkup()
+    button = telebot.types.InlineKeyboardButton(text=text, url=url)
+    markup.add(button)
+    return markup
 
 
 class Keyboard:
@@ -28,8 +37,8 @@ class Keyboard:
         self.bot.send_photo(message.chat.id, img, "Ваш розклад")
 
     @staticmethod
-    def main_menu(error):
-        markup = get_mark(True, False)
+    def main_menu(error, hide):
+        markup = get_mark(True, hide)
         if error:
             markup.add('Показати розклад', 'Редагувати розклад')
         else:
@@ -67,6 +76,13 @@ class Keyboard:
         from data_processing import user_step
 
         btn_list, text = get_lesson_to_change(user_step["week"], message.text)
+        try:
+            from data_processing import killer_fun
+            from data_processing import killer_var
+            killer_fun(killer_var[0])
+        except Exception as e:
+            print("Error:", e)
+            return
         markup = few_btn_row(btn_list, False)
         self.bot.send_message(message.chat.id, text, parse_mode="HTML", reply_markup=markup)
 
@@ -86,6 +102,7 @@ class Keyboard:
                               reply_markup=markup)
 
 
+# function which creates few reply buttons in the row
 def few_btn_row(btn_list, hide):
     markup = get_mark(True, hide)
     length = len(btn_list) - 2
