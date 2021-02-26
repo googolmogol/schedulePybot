@@ -1,15 +1,5 @@
 import telebot
 
-# dicts instead switch/if-else
-
-# dict of buttons, last value - text to send
-
-# list which holds values to change:
-# [0] - row
-# [1] - col
-# [2] - value to change
-
-change_values = []
 
 changed_week = ''  # var to define which week choose user
 
@@ -34,7 +24,7 @@ class Keyboard:
     # just send photo of schedule
     def show_schedule(self, message):
         img = open('restfiles/schedule.jpg', 'rb')
-        self.bot.send_photo(message.chat.id, img, "Ваш розклад")
+        self.bot.send_photo(message.chat.id, img, "<strong>Ваш розклад</strong>", parse_mode="HTML")
 
     def send_msg_to_bot(self, message, text, markup):
         self.bot.send_message(message.chat.id, text, parse_mode="HTML", reply_markup=markup)
@@ -52,16 +42,16 @@ class Keyboard:
         mar = get_mark(True, False)
         mar.add('Додати пару', 'Редагувати пару')
         mar.add('Видалити пару', 'Головне меню')
-        text = "Оберіть, що необхідно редагувати:"
+        text = "<strong>Оберіть, що необхідно редагувати:</strong>"
         self.send_msg_to_bot(message, text, mar)
 
     # changing and deleting lesson
     def edit_lesson(self, message):
         markup = get_mark(True, False)
-        markup.add('Парний', 'Непарний')
-        markup.add('Назад в меню редагування розкладу')
-        markup.add('Головне меню')
-        text = "Оберіть тиждень:"
+        markup.add('Парний', 'Непарний', 'Обидва')
+        markup.add('Назад в меню редагування розкладу', 'Головне меню')
+
+        text = "<strong>Оберіть тиждень:</strong>"
         self.send_msg_to_bot(message, text, markup)
 
     def choosing_day(self, message):
@@ -69,16 +59,24 @@ class Keyboard:
         markup.add('Понеділок', 'Вівторок', 'Середа')
         markup.add('Четвер', "П'ятниця", 'Субота')
         markup.add('Неділя')
-        markup.add('Назад до вибору тижня', 'Головне меню')
-        text = 'Оберіть день, коли відбувається пара:'
+        from data_processing import status_user
+        from data_processing import user_step_add
+        if status_user(user_step_add, "action"):
+            text = '<strong>Оберіть день, на який необхідно додати пару:</strong>'
+            markup.add('Назад в меню редагування розкладу', 'Головне меню')
+        else:
+            text = '<strong>Оберіть день, коли відбувається пара:</strong>'
+            markup.add('Назад до вибору тижня', 'Головне меню')
+
         self.send_msg_to_bot(message, text, markup)
 
     def choosing_lesson(self, message):
-        self.bot.send_message(message.chat.id, "Вантажу...почекайте, нічого не клацайте!!!")
+        self.bot.send_message(message.chat.id, "<strong>Вантажу...почекайте, нічого не клацайте!!!</strong>",
+                              parse_mode="HTML")
         from data_processing import get_lesson_to_change
-        from data_processing import user_step
+        from data_processing import user_step_edit
 
-        btn_list, text = get_lesson_to_change(user_step["week"], message.text)
+        btn_list, text = get_lesson_to_change(user_step_edit["week"], message.text)
         markup = few_btn_row(btn_list, False)
         self.send_msg_to_bot(message, text, markup)
 
@@ -86,11 +84,11 @@ class Keyboard:
         from data_processing import get_text_choosing_lesson_num
         text = get_text_choosing_lesson_num(message)
         markup = get_mark(True, False)
-        from data_processing import user_step
-        if user_step['action'] == 'Редагувати пару':
+        from data_processing import user_step_edit
+        if user_step_edit['action'] == 'Редагувати пару':
             markup.add('Назву пари', 'Викладача', 'Час', 'Посилання', 'Тиждень')
             markup.add('Назад до вибору дня', 'Головне меню')
-        if user_step['action'] == 'Видалити пару':
+        if user_step_edit['action'] == 'Видалити пару':
             markup.add('Видалити цю пару')
             markup.add('Назад до вибору дня', 'Головне меню')
         self.send_msg_to_bot(message, text, markup)
@@ -99,43 +97,53 @@ class Keyboard:
         markup = get_mark(True, False)
         markup.add('Назву пари', 'Викладача', 'Час', 'Посилання', 'Назад до вибору параметра для редагування',
                    'Головне меню')
-        text = "Оберіть, що необхідно редагувати:"
+        text = "<strong>Оберіть, що необхідно редагувати:</strong>"
         self.send_msg_to_bot(message, text, markup)
 
     def choosing_item_to_change(self, message):
         markup = get_mark(True, False)
         markup.add('Зберегти')
         markup.add('Назад до вибору дня', 'Головне меню')
-        from data_processing import user_step
-        text = "Введіть " + user_step["item_to_change"].lower() + ' та натисність кнопку "Зберегти"'
+        from data_processing import user_step_edit
+        text = "<strong>Введіть " + user_step_edit["item_to_change"].lower() + \
+               ' та натисність кнопку "Зберегти"</strong>'
         self.send_msg_to_bot(message, text, markup)
+
+    def enter_lesson_values(self, message, text, last):
+        if last:
+            markup = get_mark(True, False)
+            markup.add('Зберегти додану пару')
+            markup.add('Назад в меню редагування', 'Головне меню')
+            self.send_msg_to_bot(message, text, markup)
+        else:
+            self.bot.send_message(message.chat.id, text, parse_mode="HTML")
 
     def save_changed_value(self, message):
         markup = get_mark(True, False)
         markup.add('Зберегти', 'Назад до вибору дня')
-        text = 'Натисність кнопку "Зберегти"'
+        text = '<strong>Натисність кнопку "Зберегти"</strong>'
         self.send_msg_to_bot(message, text, markup)
 
     def save_edit_lesson(self, message):
         markup = get_mark(True, False)
         markup.add('Назад до вибору дня', 'Головне меню')
-        from data_processing import user_step
-        text = "Зберіг\nЩо далі, шеф?"
+        from data_processing import user_step_edit
+        text = "<strong>Зберіг\nЩо далі, шеф?</strong>"
 
-        if message.text == "Так" and user_step["action"] == 'Видалити пару':
-            text = "Видалив\nСподіваюсь, що пари дійсно немає"
+        if message.text == "Так" and user_step_edit["action"] == 'Видалити пару':
+            text = "<strong>Видалив\nСподіваюсь, що пари дійсно немає</strong>"
 
-        elif message.text == "Ні" and user_step["action"] == 'Видалити пару':
-            text = "Охрана атмєна"
+        elif message.text == "Ні" and user_step_edit["action"] == 'Видалити пару':
+            text = "<strong>Охрана атмєна</strong>"
         self.send_msg_to_bot(message, text, markup)
 
     def sure_delete(self, message):
         markup = get_mark(True, False)
         markup.add('Так', 'Ні')
         from data_processing import lesson_to_change1
-        from data_processing import user_step
-        print(lesson_to_change1[0][1])
-        text = 'Ви впевнені, що хочете видалити пару "' + lesson_to_change1[int(user_step['lesson_num']) - 1][2] + '"?'
+        from data_processing import user_step_edit
+        text = 'Ви впевнені, що хочете видалити пару "' + lesson_to_change1[int(user_step_edit['lesson_num']) - 1][2] + \
+               '"?'
         self.send_msg_to_bot(message, text, markup)
 
 
@@ -162,3 +170,5 @@ def few_btn_row(btn_list, hide):
         markup.add(btn_list[0])
     markup.add(btn_list[-2], btn_list[-1])
     return markup
+
+

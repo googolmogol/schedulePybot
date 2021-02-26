@@ -6,8 +6,12 @@ from parsing_sheet import get_lessons_row, time_before_lesson, get_users_id
 from reply_keyboard import inline_button, Keyboard
 
 # dict for user activity, to track his steps
-user_step = {"action": 'kek', "week": 'kek', "day": 'kek', "lesson_num": 'kek', "item_to_change": 'kek',
-             "changed_value": 'kek'}
+user_step_edit = {"action": 'kek', "week": 'kek', "day": 'kek', "lesson_num": 'kek', "item_to_change": 'kek',
+                  "changed_value": 'kek'}
+
+user_step_add = {"action": 'kek', "day": 'kek', "time": 'kek', "lesson_name": 'kek', "teacher": 'kek', "week": 'kek',
+                 "link": 'kek'}
+
 # dict with change items and their position on Google SH
 items_change_dict = {'Назву пари': 3, 'Викладача': 4, 'Час': 2, 'Посилання': 6, 'Тиждень': 5}
 
@@ -26,7 +30,7 @@ lesson_today = []  # list for parsing today's lessons
 def get_lesson_to_change(ch_week, day):
     day_digit = days_dict_ua[day]
     button_list.clear()
-    text = day + ", пари, " + ch_week.lower() + " тиждень:\n\n"
+    text = "<strong>" + day + ", пари, " + ch_week.lower() + " тиждень:</strong>\n\n"
     global lesson_to_change1
     lesson_to_change1 = get_lessons_row(ch_week.lower(), day_digit, True)
     counter = 1
@@ -40,7 +44,7 @@ def get_lesson_to_change(ch_week, day):
 
         text += '\n'
     if len(lesson_to_change1) > 0:
-        text += "\nОберіть номер пари, яку необхідно редагувати: "
+        text += "\n<strong>Оберіть номер пари, яку необхідно редагувати:</strong>"
     else:
         text = "<strong>В цей день немає пар</strong>"
     button_list.append('Назад до вибору дня')
@@ -56,8 +60,8 @@ def get_text_choosing_lesson_num(message):
         3] + "\nЧас: " + lesson_to_change1[index - 1][1] + "\nПосилання: " + '<a href="' + \
         lesson_to_change1[index - 1][5] + '">лінк</a>\nТиждень: ' + lesson_to_change1[index - 1][4]
     text += '\n'
-    if user_step['action'] == 'Редагувати пару':
-        text += "\nОберіть, що саме необхідно редагувати:"
+    if user_step_edit['action'] == 'Редагувати пару':
+        text += "\n<strong>Оберіть, що саме необхідно редагувати:</strong>"
     return text
 
 
@@ -69,15 +73,20 @@ class DataProc:
     # reminds about today's lesson
     def job(self, lesson):
         global lock_is
+        keyb = Keyboard(self)
 
         if datetime.today().isoweekday() == 1:
             lock_is = True
 
-        text = "<strong>Пара: </strong>" + lesson[2] + "\n<strong>Викладач: </strong>" + lesson[3]
-        if lesson[2] == '-':
-            text = "Сьогодні у вас вікно!\nПерепочинок від навчання!"
-
-        self.send_messages_all(text, chat_id_list, inline_button("Посилання на пару", lesson[5]))
+        if len(lesson) > 0:
+            text = "<strong>Пара: </strong>" + lesson[2] + "\n<strong>Викладач: </strong>" + lesson[3]
+            url = lesson[5]
+            btn_nm = "Посилання на пару"
+            markup = inline_button(btn_nm, url)
+        else:
+            text = "<strong>Сьогодні у вас вікно!\nПерепочинок від навчання!</strong>"
+            markup = keyb.main_menu(False, True)
+        self.send_messages_all(text, chat_id_list, markup)
 
     #  function sending messages to all users
     def send_messages_all(self, text, user_list, markup):
@@ -104,11 +113,11 @@ class DataProc:
 
     # request data from google sheet
     def get_full_row(self):
+        self.determine_week()
         global lesson_today
         if not week:
             lesson_today = get_lessons_row("непарний", datetime.today().isoweekday(), False)
             print("непарний")
-            print(lesson_today)
         else:
             lesson_today = get_lessons_row("парний", datetime.today().isoweekday(), False)
             print("парний")
@@ -126,22 +135,22 @@ class DataProc:
         except Exception as e:
             print(e, "The previous schedule wasn't created!")
         try:
+            if len(lesson_today) < 1:
+                schedule_var = schedule.every().day.at("13:14").do(self.job, lesson_today)
             for i in lesson_today:
                 schedule_var = schedule.every().day.at(i[1]).do(self.job, i)
                 if i[2] != '-':
-                    text = '<strong>Нагадування!</strong>\nПара "' + i[2] + '" розпочнеться за 10 хвилин.'
+                    text = '<strong>Нагадування!\nПара "' + i[2] + '" розпочнеться за 10 хвилин.</strong>'
                     schedule_var2 = schedule.every().day.at(time_before_lesson(i[1])).do(self.send_messages_all, text,
                                                                                          chat_id_list, markup)
         except Exception as e:
             print(e, "Invalid time format")
 
 
-
 # verifies compliance with the sequence of user steps
-def status_user(value):
+def status_user(user_step, value):
     keys = list(user_step.keys())
     first_elements = keys.index(value) + 1
-    print(first_elements)
     keys = keys[:first_elements]
     for i in keys:
         if user_step[i] == 'kek':
@@ -150,9 +159,17 @@ def status_user(value):
 
 
 # clear user status
-def clear_user_step(current):
+def clear_user_step(user_step, current):
     keys = list(user_step.keys())[::-1]  # reverse list
     for i in keys:
         user_step[i] = 'kek'
         if i == current:
             break
+
+
+def datetime_format(time):
+    try:
+        return str(datetime.strptime(time, "%H:%M"))[11:-3], True
+    except Exception as e:
+        print(e)
+        return "Введіть час правильно!", False
