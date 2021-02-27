@@ -34,6 +34,7 @@ def get_lessons_row(week, day, row_index):
                 lesson_to_change.append(worksheet.row_values(counter))
                 if row_index:
                     row_index_to_change.append(counter)
+    print('row_index_to_change:', row_index_to_change)
     return lesson_to_change
 
 
@@ -57,5 +58,3 @@ def get_users_id():
 def time_before_lesson(lesson_time):
     return str(datetime.strptime(lesson_time, "%H:%M") - datetime.strptime("00:10", "%H:%M"))[:-3]
 
-
-print(str(datetime.strptime("9:10", "%H:%M"))[11:-3])

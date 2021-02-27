@@ -16,166 +16,171 @@ def message_handler(message, bot):
     global keyboard
     keyboard = Keyboard(bot)
 
-    ###################
-    # MAIN MENU #######
-    ###################
-    if message.text in main_menu_list:
+    try:
 
-        if message.text == 'Показати розклад':
-            keyboard.show_schedule(message)
+        ###################
+        # MAIN MENU #######
+        ###################
+        if message.text in main_menu_list:
 
-        elif message.text == 'Головне меню':
-            send_msg_bot(bot, message)
-            clear_user_step(user_step_edit, "action")
-            clear_user_step(user_step_add, "action")
+            if message.text == 'Показати розклад':
+                keyboard.show_schedule(message)
 
-        elif message.text == "Редагувати розклад" or message.text == "Назад в меню редагування розкладу":
-            keyboard.edit_schedule(message)
-            clear_user_step(user_step_edit, "action")
-            clear_user_step(user_step_add, "action")
+            elif message.text == 'Головне меню':
+                send_msg_bot(bot, message)
+                clear_user_step(user_step_edit, "action")
+                clear_user_step(user_step_add, "action")
 
-    ###################
-    # EDIT SCHEDULE ###
-    ###################
-    elif message.text in edit_schedule_list:
+            elif message.text == "Редагувати розклад" or message.text == "Назад в меню редагування розкладу":
+                keyboard.edit_schedule(message)
+                clear_user_step(user_step_edit, "action")
+                clear_user_step(user_step_add, "action")
 
-        if message.text == "Редагувати пару" or message.text == "Видалити пару":
-            user_step_edit["action"] = message.text
-            keyboard.edit_lesson(message)
+        ###################
+        # EDIT SCHEDULE ###
+        ###################
+        elif message.text in edit_schedule_list:
 
-        elif message.text == "Додати пару":
-            user_step_add["action"] = message.text
-            keyboard.choosing_day(message)
+            if message.text == "Редагувати пару" or message.text == "Видалити пару":
+                user_step_edit["action"] = message.text
+                keyboard.edit_lesson(message)
 
-        elif message.text == "Парний" or message.text == "Непарний" or message.text == "Обидва":
-            if status_user(user_step_edit, "action"):
-                user_step_edit["week"] = message.text
+            elif message.text == "Додати пару":
+                user_step_add["action"] = message.text
                 keyboard.choosing_day(message)
-            elif status_user(user_step_add, "teacher"):
-                user_step_add["week"] = message.text.lower()
-                text = "<strong>Введіть лінк:</strong>"
+
+            elif message.text == "Парний" or message.text == "Непарний" or message.text == "Обидва":
+                if status_user(user_step_edit, "action"):
+                    user_step_edit["week"] = message.text
+                    keyboard.choosing_day(message)
+                elif status_user(user_step_add, "teacher"):
+                    user_step_add["week"] = message.text.lower()
+                    text = "<strong>Введіть лінк:</strong>"
+                    keyboard.enter_lesson_values(message, text, False)
+                else:
+                    send_msg_bot(bot, message)
+
+            elif message.text == "Зберегти":
+                if status_user(user_step_edit, "changed_value"):
+                    update_data(row_index_to_change[int(user_step_edit["lesson_num"]) - 1],
+                                items_change_dict[user_step_edit["item_to_change"]], user_step_edit["changed_value"])
+                    keyboard.save_edit_lesson(message)
+                    clear_user_step(user_step_edit, "item_to_change")
+                else:
+                    send_msg_bot(bot, message)
+
+            elif message.text == "Зберегти додану пару":
+                if status_user(user_step_add, "link"):
+                    add_new_lesson(list(user_step_add.values())[1:])
+                    send_msg_bot(bot, message)
+                    clear_user_step(user_step_add, "action")
+                else:
+                    send_msg_bot(bot, message)
+
+            elif message.text == "Видалити цю пару":
+                if status_user(user_step_edit, "lesson_num"):
+                    keyboard.sure_delete(message)
+
+            elif message.text == "Так":
+                for i in range(1, 7):
+                    update_data(row_index_to_change[int(user_step_edit["lesson_num"]) - 1], i, "")
+                keyboard.save_edit_lesson(message)
+
+            elif message.text == "Ні":
+                keyboard.save_edit_lesson(message)
+
+        ###################
+        # DAYS CHOOSING ###
+        ###################
+        elif message.text in days_dict_ua:
+            if status_user(user_step_edit, "week"):
+                user_step_edit["day"] = message.text
+                keyboard.choosing_lesson(message)
+            elif status_user(user_step_add, "action"):
+                user_step_add["day"] = days_dict[days_dict_ua[message.text]]
+                text = '<strong>Введіть час пари, наприклад: "13:15":</strong>'
                 keyboard.enter_lesson_values(message, text, False)
             else:
                 send_msg_bot(bot, message)
 
-        elif message.text == "Зберегти":
-            if status_user(user_step_edit, "changed_value"):
-                update_data(row_index_to_change[int(user_step_edit["lesson_num"]) - 1],
-                            items_change_dict[user_step_edit["item_to_change"]], user_step_edit["changed_value"])
-                keyboard.save_edit_lesson(message)
-                clear_user_step(user_step_edit, "item_to_change")
+        ###################
+        # LESSON NUMBER ###
+        ###################
+        elif message.text.isdigit() and message.text in button_list:
+            if status_user(user_step_edit, "day"):
+                user_step_edit["lesson_num"] = message.text
+                keyboard.choosing_lesson_num(message)
             else:
                 send_msg_bot(bot, message)
 
-        elif message.text == "Зберегти додану пару":
-            if status_user(user_step_add, "link"):
-                add_new_lesson(list(user_step_add.values())[1:])
-                send_msg_bot(bot, message)
-                clear_user_step(user_step_add, "action")
-            else:
-                send_msg_bot(bot, message)
-
-        elif message.text == "Видалити цю пару":
+        ###################
+        # ITEMS TO CHANGE #
+        ###################
+        elif message.text in items_change_dict:
             if status_user(user_step_edit, "lesson_num"):
-                keyboard.sure_delete(message)
-
-        elif message.text == "Так":
-            for i in range(1, 7):
-                update_data(row_index_to_change[int(user_step_edit["lesson_num"]) - 1], i, "")
-            keyboard.save_edit_lesson(message)
-
-        elif message.text == "Ні":
-            keyboard.save_edit_lesson(message)
-
-    ###################
-    # DAYS CHOOSING ###
-    ###################
-    elif message.text in days_dict_ua:
-        if status_user(user_step_edit, "week"):
-            user_step_edit["day"] = message.text
-            keyboard.choosing_lesson(message)
-        elif status_user(user_step_add, "action"):
-            user_step_add["day"] = days_dict[days_dict_ua[message.text]]
-            text = '<strong>Введіть час пари, наприклад: "13:15":</strong>'
-            keyboard.enter_lesson_values(message, text, False)
-        else:
-            send_msg_bot(bot, message)
-
-    ###################
-    # LESSON NUMBER ###
-    ###################
-    elif message.text.isdigit() and message.text in button_list:
-        if status_user(user_step_edit, "day"):
-            user_step_edit["lesson_num"] = message.text
-            keyboard.choosing_lesson_num(message)
-        else:
-            send_msg_bot(bot, message)
-
-    ###################
-    # ITEMS TO CHANGE #
-    ###################
-    elif message.text in items_change_dict:
-        if status_user(user_step_edit, "lesson_num"):
-            user_step_edit["item_to_change"] = message.text
-            keyboard.choosing_item_to_change(message)
-        else:
-            send_msg_bot(bot, message)
-
-    ###################
-    # BACK BUTTONS  ###
-    ###################
-    elif message.text == "Назад до вибору тижня":
-        keyboard.edit_lesson(message)
-        clear_user_step(user_step_edit, "week")
-
-    elif message.text == "Назад до вибору дня":
-        keyboard.choosing_day(message)
-        clear_user_step(user_step_edit, "day")
-
-    ########################################
-    # DEFINE USER STATUS TO ADD NEW LESSON #
-    ########################################
-
-    elif status_user(user_step_edit, "item_to_change"):
-
-        if user_step_edit["item_to_change"] == "Час":
-            if datetime_format(message.text)[1]:
-                user_step_edit['changed_value'] = datetime_format(message.text)[0]
-                keyboard.save_changed_value(message)
+                user_step_edit["item_to_change"] = message.text
+                keyboard.choosing_item_to_change(message)
             else:
-                bot.send_message(message.chat.id, datetime_format(message.text)[0])
+                send_msg_bot(bot, message)
+
+        ###################
+        # BACK BUTTONS  ###
+        ###################
+        elif message.text == "Назад до вибору тижня":
+            keyboard.edit_lesson(message)
+            clear_user_step(user_step_edit, "week")
+
+        elif message.text == "Назад до вибору дня":
+            keyboard.choosing_day(message)
+            clear_user_step(user_step_edit, "day")
+
+        ########################################
+        # DEFINE USER STATUS TO ADD NEW LESSON #
+        ########################################
+
+        elif status_user(user_step_edit, "item_to_change"):
+
+            if user_step_edit["item_to_change"] == "Час":
+                if datetime_format(message.text)[1]:
+                    user_step_edit['changed_value'] = datetime_format(message.text)[0]
+                    keyboard.save_changed_value(message)
+                else:
+                    bot.send_message(message.chat.id, datetime_format(message.text)[0])
+            else:
+                user_step_edit['changed_value'] = message.text
+                keyboard.save_changed_value(message)
+
+        elif status_user(user_step_add, "week"):
+            user_step_add["link"] = message.text
+            text = '<strong>Натисніть кнопку "Зберегти додану пару" для додавання пари:</strong>'
+            keyboard.enter_lesson_values(message, text, True)
+
+        elif status_user(user_step_add, "lesson_name"):
+            user_step_add["teacher"] = message.text
+            keyboard.edit_lesson(message)
+
+        elif status_user(user_step_add, "time"):
+            user_step_add["lesson_name"] = message.text
+            text = "<strong>Введіть вчителя:</strong>"
+            keyboard.enter_lesson_values(message, text, False)
+
+        elif status_user(user_step_add, "day"):
+            if datetime_format(message.text)[1]:
+                user_step_add["time"] = datetime_format(message.text)[0]
+                text = "<strong>Введіть назву пари:</strong>"
+            else:
+                text = datetime_format(message.text)[0]
+            keyboard.enter_lesson_values(message, text, False)
+
         else:
-            user_step_edit['changed_value'] = message.text
-            keyboard.save_changed_value(message)
+            send_msg_bot(bot, message)
 
-    elif status_user(user_step_add, "week"):
-        user_step_add["link"] = message.text
-        text = '<strong>Натисніть кнопку "Зберегти додану пару" для додавання пари:</strong>'
-        keyboard.enter_lesson_values(message, text, True)
+        print('edit:', user_step_edit)
+        print('add:', user_step_add)
 
-    elif status_user(user_step_add, "lesson_name"):
-        user_step_add["teacher"] = message.text
-        keyboard.edit_lesson(message)
-
-    elif status_user(user_step_add, "time"):
-        user_step_add["lesson_name"] = message.text
-        text = "<strong>Введіть вчителя:</strong>"
-        keyboard.enter_lesson_values(message, text, False)
-
-    elif status_user(user_step_add, "day"):
-        if datetime_format(message.text)[1]:
-            user_step_add["time"] = datetime_format(message.text)[0]
-            text = "<strong>Введіть назву пари:</strong>"
-        else:
-            text = datetime_format(message.text)[0]
-        keyboard.enter_lesson_values(message, text, False)
-
-    else:
+    except Exception as e:
+        print(e)
         send_msg_bot(bot, message)
-
-    #  print('edit:', user_step_edit)
-    print('add:', user_step_add)
-
 
 def send_msg_bot(bot, message):
     if message.text == "Головне меню":

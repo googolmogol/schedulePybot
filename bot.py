@@ -11,14 +11,17 @@ import time
 from reply_keyboard import Keyboard
 
 bot = telebot.TeleBot("801359509:AAHjuBl_1xRdDHHTTacpT3Q1TSiXl_qQiCw")
+bot.remove_webhook()
+
+dataproc = DataProc(bot)
 
 keyboard = Keyboard(bot)
-dataproc = DataProc(bot)
 
 
 @bot.message_handler(commands=['start'])
 def send_welcome(message):
     chat_id = message.chat.id
+    print(type(message.chat.id))
     print(message.from_user.first_name, "joined")
     print("chat_id", chat_id)
     print(chat_id_list)
@@ -26,6 +29,7 @@ def send_welcome(message):
         chat_id_list.append(chat_id)
         insert_users(chat_id_list)
 
+    bot.send_message(270095431, "TI SUKA")
     hub_btn = inline_button("Хаб з матеріалами",
                             "https://drive.google.com/drive/folders/16c2M4x1JY1PdvjVngOBrNG29B5Pn5p0o"
                             "?usp=sharing")

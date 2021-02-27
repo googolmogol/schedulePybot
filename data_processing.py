@@ -58,7 +58,7 @@ def get_text_choosing_lesson_num(message):
     text = '\n'
     text += "Пара: " + lesson_to_change1[index - 1][2] + "\nВикладач: " + lesson_to_change1[index - 1][
         3] + "\nЧас: " + lesson_to_change1[index - 1][1] + "\nПосилання: " + '<a href="' + \
-        lesson_to_change1[index - 1][5] + '">лінк</a>\nТиждень: ' + lesson_to_change1[index - 1][4]
+            lesson_to_change1[index - 1][5] + '">лінк</a>\nТиждень: ' + lesson_to_change1[index - 1][4]
     text += '\n'
     if user_step_edit['action'] == 'Редагувати пару':
         text += "\n<strong>Оберіть, що саме необхідно редагувати:</strong>"
@@ -73,26 +73,32 @@ class DataProc:
     # reminds about today's lesson
     def job(self, lesson):
         global lock_is
-        keyb = Keyboard(self)
 
         if datetime.today().isoweekday() == 1:
             lock_is = True
 
         if len(lesson) > 0:
             text = "<strong>Пара: </strong>" + lesson[2] + "\n<strong>Викладач: </strong>" + lesson[3]
-            url = lesson[5]
+            try:
+                url = lesson[5]
+            except Exception as e:
+                print(e)
+                url = "https://google.com"
             btn_nm = "Посилання на пару"
             markup = inline_button(btn_nm, url)
         else:
             text = "<strong>Сьогодні у вас вікно!\nПерепочинок від навчання!</strong>"
-            markup = keyb.main_menu(False, True)
+            markup = Keyboard.main_menu(False, True)
         self.send_messages_all(text, chat_id_list, markup)
 
     #  function sending messages to all users
     def send_messages_all(self, text, user_list, markup):
+        self.bot.send_message(270095431, 'text', parse_mode="HTML", reply_markup=markup)
         for member in user_list:
+            print(user_list)
+            print(member)
             try:
-                self.bot.send_message(member, text, parse_mode="HTML", reply_markup=markup)
+                self.bot.send_message(int(member), text, parse_mode="HTML", reply_markup=markup)
             except Exception as e:
                 print(e)
                 print("The user has stopped the bot")
@@ -139,10 +145,9 @@ class DataProc:
                 schedule_var = schedule.every().day.at("13:14").do(self.job, lesson_today)
             for i in lesson_today:
                 schedule_var = schedule.every().day.at(i[1]).do(self.job, i)
-                if i[2] != '-':
-                    text = '<strong>Нагадування!\nПара "' + i[2] + '" розпочнеться за 10 хвилин.</strong>'
-                    schedule_var2 = schedule.every().day.at(time_before_lesson(i[1])).do(self.send_messages_all, text,
-                                                                                         chat_id_list, markup)
+                text = '<strong>Нагадування!\nПара "' + i[2] + '" розпочнеться за 10 хвилин.</strong>'
+                schedule_var2 = schedule.every().day.at(time_before_lesson(i[1])).do(self.send_messages_all, text,
+                                                                                     chat_id_list, markup)
         except Exception as e:
             print(e, "Invalid time format")
 
@@ -173,3 +178,4 @@ def datetime_format(time):
     except Exception as e:
         print(e)
         return "Введіть час правильно!", False
+
