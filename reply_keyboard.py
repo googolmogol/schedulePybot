@@ -1,6 +1,5 @@
 import telebot
 
-
 changed_week = ''  # var to define which week choose user
 
 
