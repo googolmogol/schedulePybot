@@ -1,16 +1,17 @@
 from datetime import datetime
 
 import schedule
+import validators
 
 from parsing_sheet import get_lessons_row, time_before_lesson, get_users_id
 from reply_keyboard import inline_button, Keyboard
 
 # dict for user activity, to track his steps
-user_step_edit = {"action": 'kek', "week": 'kek', "day": 'kek', "lesson_num": 'kek', "item_to_change": 'kek',
-                  "changed_value": 'kek'}
+user_step_edit = {"action": '', "week": '', "day": '', "lesson_num": '', "item_to_change": '',
+                  "changed_value": ''}
 
-user_step_add = {"action": 'kek', "day": 'kek', "time": 'kek', "lesson_name": 'kek', "teacher": 'kek', "week": 'kek',
-                 "link": 'kek'}
+user_step_add = {"action": '', "day": '', "time": '', "lesson_name": '', "teacher": '', "week": '',
+                 "link": ''}
 
 # dict with change items and their position on Google SH
 items_change_dict = {'Назву пари': 3, 'Викладача': 4, 'Час': 2, 'Посилання': 6, 'Тиждень': 5}
@@ -28,9 +29,12 @@ lesson_today = []  # list for parsing today's lessons
 
 # get all lessons for choosen day
 def get_lesson_to_change(ch_week, day):
+    from bot import dictionary_bot
+
     day_digit = days_dict_ua[day]
     button_list.clear()
-    text = "<strong>" + day + ", пари, " + ch_week.lower() + " тиждень:</strong>\n\n"
+    text = "<strong>" + day + ", " + dictionary_bot["plural_lesson"].lower() + ", " + ch_week.lower() + " " + \
+           dictionary_bot["week"].lower() + ":</strong>\n\n"
     global lesson_to_change1
     lesson_to_change1 = get_lessons_row(ch_week.lower(), day_digit, True)
     counter = 1
@@ -39,16 +43,17 @@ def get_lesson_to_change(ch_week, day):
         counter += 1
         button_list.append(str(counter - 1))
 
-        text += ". Пара: " + i[2] + "\nВикладач: " + i[3] + "\nЧас: " + i[1] + "\nПосилання: " + '<a href="' + i[5] + \
-                '">лінк</a>\nТиждень: ' + i[4]
+        text += ". " + dictionary_bot['lesson'] + ": " + i[2] + "\n" + dictionary_bot['teacher'] + ": " + i[3] + "\n"\
+                + dictionary_bot['time'] + ": " + i[1] + "\n" + dictionary_bot['link'] + ": " + '<a href="' + i[5] + \
+                '">' + dictionary_bot['link_short'] + "</a>\n" + dictionary_bot["week"] + ": " + i[4]
 
         text += '\n'
     if len(lesson_to_change1) > 0:
-        text += "\n<strong>Оберіть номер пари, яку необхідно редагувати:</strong>"
+        text += dictionary_bot['choose_lesson_num_to_change']
     else:
-        text = "<strong>В цей день немає пар</strong>"
-    button_list.append('Назад до вибору дня')
-    button_list.append('Головне меню')
+        text = dictionary_bot['no_lessons_today']
+    button_list.append(dictionary_bot['back_to_day_choosing'])
+    button_list.append(dictionary_bot['main_menu'])
     return button_list, text
 
 
@@ -58,7 +63,7 @@ def get_text_choosing_lesson_num(message):
     text = '\n'
     text += "Пара: " + lesson_to_change1[index - 1][2] + "\nВикладач: " + lesson_to_change1[index - 1][
         3] + "\nЧас: " + lesson_to_change1[index - 1][1] + "\nПосилання: " + '<a href="' + \
-            lesson_to_change1[index - 1][5] + '">лінк</a>\nТиждень: ' + lesson_to_change1[index - 1][4]
+        lesson_to_change1[index - 1][5] + '">лінк</a>\nТиждень: ' + lesson_to_change1[index - 1][4]
     text += '\n'
     if user_step_edit['action'] == 'Редагувати пару':
         text += "\n<strong>Оберіть, що саме необхідно редагувати:</strong>"
@@ -79,13 +84,12 @@ class DataProc:
 
         if len(lesson) > 0:
             text = "<strong>Пара: </strong>" + lesson[2] + "\n<strong>Викладач: </strong>" + lesson[3]
-            try:
-                url = lesson[5]
-            except Exception as e:
-                print(e)
-                url = "https://google.com"
-            btn_nm = "Посилання на пару"
-            markup = inline_button(btn_nm, url)
+            url = lesson[5]
+            if checking_url(url):
+                btn_nm = "Посилання на пару"
+                markup = inline_button(btn_nm, url)
+            else:
+                markup = Keyboard.main_menu(False, True)
         else:
             text = "<strong>Сьогодні у вас вікно!\nПерепочинок від навчання!</strong>"
             markup = Keyboard.main_menu(False, True)
@@ -93,10 +97,7 @@ class DataProc:
 
     #  function sending messages to all users
     def send_messages_all(self, text, user_list, markup):
-        self.bot.send_message(270095431, 'text', parse_mode="HTML", reply_markup=markup)
         for member in user_list:
-            print(user_list)
-            print(member)
             try:
                 self.bot.send_message(int(member), text, parse_mode="HTML", reply_markup=markup)
             except Exception as e:
@@ -142,7 +143,7 @@ class DataProc:
             print(e, "The previous schedule wasn't created!")
         try:
             if len(lesson_today) < 1:
-                schedule_var = schedule.every().day.at("13:14").do(self.job, lesson_today)
+                schedule_var = schedule.every().day.at("09:00").do(self.job, lesson_today)
             for i in lesson_today:
                 schedule_var = schedule.every().day.at(i[1]).do(self.job, i)
                 text = '<strong>Нагадування!\nПара "' + i[2] + '" розпочнеться за 10 хвилин.</strong>'
@@ -158,7 +159,7 @@ def status_user(user_step, value):
     first_elements = keys.index(value) + 1
     keys = keys[:first_elements]
     for i in keys:
-        if user_step[i] == 'kek':
+        if user_step[i] == '':
             return False
     return True
 
@@ -167,7 +168,7 @@ def status_user(user_step, value):
 def clear_user_step(user_step, current):
     keys = list(user_step.keys())[::-1]  # reverse list
     for i in keys:
-        user_step[i] = 'kek'
+        user_step[i] = ''
         if i == current:
             break
 
@@ -179,3 +180,9 @@ def datetime_format(time):
         print(e)
         return "Введіть час правильно!", False
 
+
+def checking_url(url):
+    if not validators.url(url):
+        return False
+    else:
+        return True

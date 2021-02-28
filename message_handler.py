@@ -177,10 +177,12 @@ def message_handler(message, bot):
 
         print('edit:', user_step_edit)
         print('add:', user_step_add)
+        print('row_index_to_change', row_index_to_change)
 
     except Exception as e:
         print(e)
         send_msg_bot(bot, message)
+
 
 def send_msg_bot(bot, message):
     if message.text == "Головне меню":
